@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+package-lock.json
+.pnpm-lock.yaml
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Build outputs
+dist/
+build/
+target/
+out/
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Vitest
+.vitest/
+
+# Tauri
+src-tauri/target/
+
+# OS
+Thumbs.db
+.DS_Store
