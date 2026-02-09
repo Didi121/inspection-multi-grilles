@@ -489,6 +489,107 @@ small {
   background: var(--gray-100);
 }
 
+/* ═══════════════════ ADMIN DASHBOARD ═══════════════════ */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--space-m);
+  margin-bottom: var(--space-l);
+}
+
+.kpi-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: var(--space-m);
+  text-align: center;
+}
+
+.kpi-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  margin-bottom: 8px;
+}
+
+.kpi-value {
+  font-size: 28px;
+  font-weight: 500;
+  font-family: var(--mono);
+  color: var(--text);
+}
+
+.admin-filters {
+  display: flex;
+  gap: var(--space-s);
+  margin-bottom: var(--space-l);
+  flex-wrap: wrap;
+}
+
+.admin-filters select {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 14px;
+  border-radius: 0;
+  min-width: 160px;
+}
+
+.admin-filters select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.tbl-admin {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.tbl-admin th {
+  text-align: left;
+  padding: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.tbl-admin td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tbl-admin tr:hover td {
+  background: var(--gray-50);
+}
+
+.tbl-admin .stat-small {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.tbl-admin .action-btn {
+  padding: 4px 8px;
+  margin-right: 4px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.tbl-admin .action-btn:hover {
+  background: var(--gray-100);
+}
+
 .empty-state {
   text-align: center;
   padding: var(--space-xl) var(--space-l);
@@ -1264,6 +1365,85 @@ small {
     </div>
   </div>
 
+  <!-- ADMIN DASHBOARD -->
+  <div class="screen" id="s-admin-dash">
+    <div class="dash">
+      <div class="dash-header">
+        <h1>Tableau de bord administrateur</h1>
+        <button class="btn-primary" style="width:auto;padding:8px 16px;font-size:14px" onclick="showScreen('grid-select')">+ Nouvelle inspection</button>
+      </div>
+
+      <!-- KPIs -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Total inspections</div>
+          <div class="kpi-value" id="kpi-total">0</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">En cours</div>
+          <div class="kpi-value" id="kpi-progress" style="color:var(--accent)">0</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Complétées</div>
+          <div class="kpi-value" id="kpi-complete" style="color:var(--accent)">0</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Validées</div>
+          <div class="kpi-value" id="kpi-validated" style="color:var(--accent)">0</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Écarts détectés</div>
+          <div class="kpi-value" id="kpi-gaps" style="color:var(--accent)">0</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Taux conformité</div>
+          <div class="kpi-value" id="kpi-conformity">—</div>
+        </div>
+      </div>
+
+      <!-- Filtres -->
+      <div class="admin-filters">
+        <select id="filterStatus" onchange="loadAdminDashboard()">
+          <option value="">Tous les statuts</option>
+          <option value="draft">Brouillon</option>
+          <option value="in_progress">En cours</option>
+          <option value="completed">Terminée</option>
+          <option value="validated">Validée</option>
+        </select>
+        <select id="filterGrid" onchange="loadAdminDashboard()">
+          <option value="">Toutes les grilles</option>
+          <option value="officine">Officine</option>
+          <option value="grossiste">Grossiste</option>
+        </select>
+        <select id="filterInspector" onchange="loadAdminDashboard()">
+          <option value="">Tous les inspecteurs</option>
+          <option value="">— En cours de chargement —</option>
+        </select>
+      </div>
+
+      <!-- Tableau -->
+      <div style="overflow-x:auto">
+        <table class="tbl-admin">
+          <thead>
+            <tr>
+              <th>Établissement</th>
+              <th>Grille</th>
+              <th>Inspecteur</th>
+              <th>Date</th>
+              <th>Statut</th>
+              <th>Progrès</th>
+              <th>Écarts</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="adminTableBody">
+            <tr><td colspan="8" style="text-align:center">Chargement...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
   <!-- GRID SELECTOR -->
   <div class="screen" id="s-grid-select">
     <div class="gs">
@@ -1440,8 +1620,15 @@ async function afterLogin() {
   document.getElementById('tRole').textContent=roleLabel(session.user.role);
   gridsData = await invoke('list_grids');
   buildTopNav();
-  showScreen('dash');
-  loadDashboard();
+
+  const isAdmin = ['admin','lead_inspector'].includes(session.user.role);
+  if (isAdmin) {
+    showScreen('admin-dash');
+    loadAdminDashboard();
+  } else {
+    showScreen('dash');
+    loadDashboard();
+  }
 }
 function roleLabel(r){ return {admin:'Admin',lead_inspector:'Inspecteur en chef',inspector:'Inspecteur',viewer:'Lecteur'}[r]||r; }
 
@@ -1450,7 +1637,8 @@ function buildTopNav() {
   const nav = document.getElementById('tNav');
   const isAdmin = ['admin','lead_inspector'].includes(session.user.role);
   nav.innerHTML = `
-    <button class="nav-btn" data-s="dash" onclick="goToDashboard()">Inspections</button>
+    ${isAdmin?'<button class="nav-btn" data-s="admin-dash" onclick="showScreen(\'admin-dash\');loadAdminDashboard()">Tableau de bord</button>':'<button class="nav-btn" data-s="dash" onclick="goToDashboard()">Inspections</button>'}
+    ${!isAdmin?'':''}
     ${isAdmin?'<button class="nav-btn" data-s="users" onclick="showScreen(\'users\');renderUsers()">Utilisateurs</button>':''}
     ${isAdmin?'<button class="nav-btn" data-s="audit" onclick="showScreen(\'audit\');renderAudit()">Audit</button>':''}
   `;
@@ -1463,7 +1651,13 @@ function goToDashboard() {
   document.getElementById('tSub').textContent='Tableau de bord';
   document.getElementById('tLogo').style.background='var(--black)';
   document.getElementById('pStrip').style.display='none';
-  showScreen('dash'); loadDashboard();
+
+  const isAdmin = ['admin','lead_inspector'].includes(session.user.role);
+  if (isAdmin) {
+    showScreen('admin-dash'); loadAdminDashboard();
+  } else {
+    showScreen('dash'); loadDashboard();
+  }
 }
 
 // ═══════════════════ SCREENS ═══════════════════
@@ -1505,6 +1699,63 @@ async function loadDashboard() {
   } catch(e){ console.error(e); }
 }
 function statusLabel(s){ return {draft:'Brouillon',in_progress:'En cours',completed:'Terminée',validated:'Validée',archived:'Archivée'}[s]||s; }
+
+// ═══════════════════ ADMIN DASHBOARD ═══════════════════
+async function loadAdminDashboard() {
+  try {
+    const list = await invoke('cmd_list_inspections',{token:session.token, myOnly:false, status:null});
+    const gridMap = {}; gridsData.forEach(g=>gridMap[g.id]=g);
+
+    const status = document.getElementById('filterStatus')?.value || '';
+    const gridFilter = document.getElementById('filterGrid')?.value || '';
+    const inspectorFilter = document.getElementById('filterInspector')?.value || '';
+
+    let filtered = list;
+    if (status) filtered = filtered.filter(i => i.status === status);
+    if (gridFilter) filtered = filtered.filter(i => i.grid_id === gridFilter);
+    if (inspectorFilter) filtered = filtered.filter(i => i.created_by_name === inspectorFilter);
+
+    const total = list.length;
+    const inProgress = list.filter(i => i.status === 'in_progress').length;
+    const completed = list.filter(i => i.status === 'completed').length;
+    const validated = list.filter(i => i.status === 'validated').length;
+
+    let totalGaps = 0, totalConforme = 0, totalAnswered = 0;
+    list.forEach(i => {
+      totalGaps += i.progress?.non_conforme || 0;
+      totalConforme += i.progress?.conforme || 0;
+      totalAnswered += i.progress?.answered || 0;
+    });
+    const conformity = totalAnswered > 0 ? Math.round((totalConforme / totalAnswered) * 100) : '—';
+
+    document.getElementById('kpi-total').textContent = total;
+    document.getElementById('kpi-progress').textContent = inProgress;
+    document.getElementById('kpi-complete').textContent = completed;
+    document.getElementById('kpi-validated').textContent = validated;
+    document.getElementById('kpi-gaps').textContent = totalGaps;
+    document.getElementById('kpi-conformity').textContent = conformity === '—' ? '—' : conformity + '%';
+
+    const tbody = document.getElementById('adminTableBody');
+    tbody.innerHTML = filtered.map(i => {
+      const g = gridMap[i.grid_id] || {icon:'📋', name:i.grid_id};
+      const pct = i.progress.answered > 0 ? Math.round((i.progress.conforme/i.progress.answered)*100) : 0;
+      return `<tr>
+        <td><strong>${i.establishment || 'Sans nom'}</strong></td>
+        <td>${g.name}</td>
+        <td>${i.created_by_name || '—'}</td>
+        <td class="stat-small">${i.date_inspection || '—'}</td>
+        <td><span class="status-badge status-${i.status}">${statusLabel(i.status)}</span></td>
+        <td class="stat-small">${i.progress.answered}/${i.progress.total} (${pct}%)</td>
+        <td class="stat-small" style="color:var(--accent)">${i.progress.non_conforme}</td>
+        <td><button class="action-btn" onclick="openInspection('${i.id}')">Voir</button></td>
+      </tr>`;
+    }).join('');
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center">Aucune inspection</td></tr>';
+    }
+  } catch(e) { console.error(e); }
+}
 
 // ═══════════════════ OPEN / RESUME INSPECTION ═══════════════════
 async function openInspection(id) {
