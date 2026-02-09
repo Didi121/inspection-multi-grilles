@@ -542,6 +542,27 @@ small {
   border-color: var(--accent);
 }
 
+.export-actions {
+  display: flex;
+  gap: var(--space-s);
+  margin-bottom: var(--space-l);
+}
+
+.action-btn {
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.action-btn:hover {
+  background: var(--gray-100);
+  border-color: var(--accent);
+}
+
 .tbl-admin {
   width: 100%;
   border-collapse: collapse;
@@ -1421,6 +1442,13 @@ small {
         </select>
       </div>
 
+      <!-- Export Actions -->
+      <div class="export-actions">
+        <button class="action-btn" onclick="exportAdminDataCSV()">📊 Export CSV</button>
+        <button class="action-btn" onclick="exportAdminDataJSON()">📄 Export JSON</button>
+        <button class="action-btn" onclick="window.print()">🖨️ Imprimer</button>
+      </div>
+
       <!-- Tableau -->
       <div style="overflow-x:auto">
         <table class="tbl-admin">
@@ -1755,6 +1783,46 @@ async function loadAdminDashboard() {
       tbody.innerHTML = '<tr><td colspan="8" style="text-align:center">Aucune inspection</td></tr>';
     }
   } catch(e) { console.error(e); }
+}
+
+// ═══════════════════ ADMIN EXPORT ═══════════════════
+async function exportAdminDataCSV() {
+  try {
+    const list = await invoke('cmd_list_inspections',{token:session.token, myOnly:false, status:null});
+    const gridMap = {}; gridsData.forEach(g=>gridMap[g.id]=g);
+    let csv = 'Établissement,Grille,Inspecteur,Date,Statut,Total,Réponses,Conforme,Non-conforme,% Conformité\n';
+    list.forEach(i => {
+      const g = gridMap[i.grid_id] || {name:i.grid_id};
+      const pct = i.progress.answered > 0 ? Math.round((i.progress.conforme/i.progress.answered)*100) : 0;
+      csv += `"${i.establishment || '-'}","${g.name}","${i.created_by_name || '-'}","${i.date_inspection || '-'}","${statusLabel(i.status)}",${i.progress.total},${i.progress.answered},${i.progress.conforme},${i.progress.non_conforme},${pct}%\n`;
+    });
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `inspections_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+  } catch(e) { alert('Erreur export: '+e); }
+}
+
+async function exportAdminDataJSON() {
+  try {
+    const list = await invoke('cmd_list_inspections',{token:session.token, myOnly:false, status:null});
+    const gridMap = {}; gridsData.forEach(g=>gridMap[g.id]=g);
+    const data = {
+      export_date: new Date().toISOString(),
+      total_count: list.length,
+      inspections: list.map(i => {
+        const g = gridMap[i.grid_id] || {name:i.grid_id};
+        return {id:i.id, establishment:i.establishment, grid:g.name, inspector:i.created_by_name, date:i.date_inspection,
+          status:i.status, progress:i.progress, conformity_percent:i.progress.answered > 0 ? Math.round((i.progress.conforme/i.progress.answered)*100) : 0};
+      })
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `inspections_${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+  } catch(e) { alert('Erreur export: '+e); }
 }
 
 // ═══════════════════ OPEN / RESUME INSPECTION ═══════════════════
