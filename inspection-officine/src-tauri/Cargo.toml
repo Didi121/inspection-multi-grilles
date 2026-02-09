@@ -1,0 +1,20 @@
+[package]
+name = "inspection-officine"
+version = "1.0.0"
+description = "Application d'inspection officine pharmaceutique - ABMed"
+authors = ["ABMed"]
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-shell = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+chrono = { version = "0.4", features = ["serde"] }
+rusqlite = { version = "0.31", features = ["bundled"] }
+bcrypt = "0.15"
+uuid = { version = "1", features = ["v4"] }
+dirs-next = "2.0"

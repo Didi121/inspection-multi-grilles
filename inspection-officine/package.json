@@ -1,0 +1,16 @@
+{
+  "name": "inspection-officine",
+  "version": "1.0.0",
+  "description": "Application d'inspection officine pharmaceutique - ABMed",
+  "scripts": {
+    "tauri": "tauri",
+    "dev": "tauri dev",
+    "build": "tauri build"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2"
+  }
+}

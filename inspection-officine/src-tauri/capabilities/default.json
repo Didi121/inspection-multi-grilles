@@ -1,0 +1,10 @@
+{
+  "$schema": "https://raw.githubusercontent.com/nicklasmoeller/tauri-config-schema/main/schema.json",
+  "identifier": "default",
+  "description": "Default capability for the inspection app",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "shell:allow-open"
+  ]
+}

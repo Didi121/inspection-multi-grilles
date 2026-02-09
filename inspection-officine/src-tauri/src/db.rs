@@ -1,0 +1,108 @@
+use rusqlite::{Connection, params};
+use std::path::PathBuf;
+use std::sync::Mutex;
+
+pub struct Database {
+    pub conn: Mutex<Connection>,
+}
+
+impl Database {
+    pub fn new(app_dir: PathBuf) -> Self {
+        std::fs::create_dir_all(&app_dir).ok();
+        let db_path = app_dir.join("inspections.db");
+        let conn = Connection::open(&db_path)
+            .expect("Impossible d'ouvrir la base de données");
+
+        conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;").ok();
+
+        conn.execute_batch("
+            -- Utilisateurs
+            CREATE TABLE IF NOT EXISTS users (
+                id          TEXT PRIMARY KEY,
+                username    TEXT NOT NULL UNIQUE,
+                full_name   TEXT NOT NULL,
+                role        TEXT NOT NULL DEFAULT 'inspector'
+                            CHECK(role IN ('admin','lead_inspector','inspector','viewer')),
+                password_hash TEXT NOT NULL,
+                active      INTEGER NOT NULL DEFAULT 1,
+                created_at  TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+                updated_at  TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+            );
+
+            -- Sessions (token simple)
+            CREATE TABLE IF NOT EXISTS sessions (
+                token       TEXT PRIMARY KEY,
+                user_id     TEXT NOT NULL REFERENCES users(id),
+                created_at  TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+                expires_at  TEXT NOT NULL
+            );
+
+            -- Inspections
+            CREATE TABLE IF NOT EXISTS inspections (
+                id          TEXT PRIMARY KEY,
+                grid_id     TEXT NOT NULL,
+                status      TEXT NOT NULL DEFAULT 'draft'
+                            CHECK(status IN ('draft','in_progress','completed','validated','archived')),
+                date_inspection TEXT,
+                establishment   TEXT,
+                inspection_type TEXT,
+                inspectors      TEXT,  -- JSON array
+                created_by  TEXT REFERENCES users(id),
+                validated_by TEXT REFERENCES users(id),
+                validated_at TEXT,
+                created_at  TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+                updated_at  TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+            );
+
+            -- Réponses
+            CREATE TABLE IF NOT EXISTS responses (
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                inspection_id   TEXT NOT NULL REFERENCES inspections(id) ON DELETE CASCADE,
+                criterion_id    INTEGER NOT NULL,
+                conforme        INTEGER,  -- NULL=non répondu, 0=non conforme, 1=conforme
+                observation     TEXT DEFAULT '',
+                updated_by      TEXT REFERENCES users(id),
+                updated_at      TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+                UNIQUE(inspection_id, criterion_id)
+            );
+
+            -- Audit trail
+            CREATE TABLE IF NOT EXISTS audit_log (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp   TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+                user_id     TEXT REFERENCES users(id),
+                username    TEXT,
+                action      TEXT NOT NULL,
+                entity_type TEXT,  -- 'inspection','response','user','session'
+                entity_id   TEXT,
+                details     TEXT,  -- JSON libre
+                ip_info     TEXT
+            );
+
+            -- Index pour performance
+            CREATE INDEX IF NOT EXISTS idx_audit_timestamp ON audit_log(timestamp);
+            CREATE INDEX IF NOT EXISTS idx_audit_user ON audit_log(user_id);
+            CREATE INDEX IF NOT EXISTS idx_audit_entity ON audit_log(entity_type, entity_id);
+            CREATE INDEX IF NOT EXISTS idx_responses_insp ON responses(inspection_id);
+            CREATE INDEX IF NOT EXISTS idx_inspections_status ON inspections(status);
+            CREATE INDEX IF NOT EXISTS idx_inspections_user ON inspections(created_by);
+        ").expect("Erreur création tables");
+
+        // Créer l'admin par défaut s'il n'existe pas
+        let admin_exists: bool = conn.query_row(
+            "SELECT COUNT(*) > 0 FROM users WHERE username = 'admin'",
+            [], |r| r.get(0)
+        ).unwrap_or(false);
+
+        if !admin_exists {
+            let hash = bcrypt::hash("admin123", 8).unwrap();
+            let id = uuid::Uuid::new_v4().to_string();
+            conn.execute(
+                "INSERT INTO users (id, username, full_name, role, password_hash) VALUES (?1,?2,?3,?4,?5)",
+                params![id, "admin", "Administrateur", "admin", hash],
+            ).ok();
+        }
+
+        Database { conn: Mutex::new(conn) }
+    }
+}
